@@ -6,29 +6,35 @@ $signup = new Crud();
 $errors = [];
 $success = [];
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $email = $_POST['email'];
     $pass = $_POST['password'];
     $cpass = $_POST['cpassword'];
-    if ($pass === $cpass) {
-        $data = $signup->InsertData(
-            'users',
-            [
-                "name" => $_POST['name'],
-                "email" => $_POST['email'],
-                "password" => $_POST['password']
-            ]
-        );
-        if ($data) {
-            $success[] = "Successfully Registered! Redirecting to login page";
-            echo '<script>
+    $userData = $signup->GetData('users', "email='$email'");
+    if ($userData) {
+        $success[] = "User Already Exist !";
+    } else {
+        if ($pass === $cpass) {
+            $data = $signup->InsertData(
+                'users',
+                [
+                    "name" => $_POST['name'],
+                    "email" => $_POST['email'],
+                    "password" => $_POST['password']
+                ]
+            );
+            if ($data) {
+                $success[] = "Successfully Registered! Redirecting to login page";
+                echo '<script>
                     setTimeout(function(){
                         window.location.href="index.php";
                     }, 2000);
                   </script>';
+            } else {
+                $errors[] = "Something Went Wrong!";
+            }
         } else {
-            $errors[] = "Something Went Wrong!";
+            $errors[] = "Password Doesn't Match!";
         }
-    } else {
-        $errors[] = "Password Doesn't Match!";
     }
 }
 ?>

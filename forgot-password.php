@@ -1,20 +1,35 @@
 <?php
-require_once 'config.php';
+session_start();
 require_once 'backend.php';
-$loginUrl = $client->createAuthUrl();
 $errors = [];
 $success = [];
-$login = new Crud();
+$crud = new Crud();
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = $_POST['email'] ?? '';
-    $password = $_POST['password'] ?? '';
-    if ($login->login('users', $email, $password)) {
-        $_SESSION['user_email'] = $email;
-        $_SESSION['user_name'] = $_SESSION['user_name'];
-        header('Location: dashboard.php');
-        exit();
+    $email = trim($_POST['email'] ?? '');
+    $userRows = $crud->GetData('users', "email='$email'");
+    if (!empty($userRows) && isset($userRows[0])) {
+        $user = $userRows[0];
+        $username = $user['name'];
+        $otp = rand(1000, 9999);
+        date_default_timezone_set('Asia/Kolkata');
+        $otp_expiration = date('Y-m-d H:i:s', strtotime('+1 minutes'));
+        $update = $crud->UpdateData('users', [
+            'otp' => $otp,
+            'otp_expiration' => $otp_expiration
+        ], "email='$email'");
+        if ($update) {
+            $_SESSION['reset_email'] = $email;
+            $_SESSION['reset_name'] = $username;
+            // (optional) send OTP by email in future
+            // mail($email, "Your OTP Code", "Your OTP is: $otp");
+            header('Location: otp.php');
+            exit();
+        } else {
+            $errors[] = "Could not send OTP. Try again.";
+        }
     } else {
-        $errors[] = "Something Went Wrong!";
+        $errors[] = "Email does not exist in our records.";
     }
 }
 ?>
@@ -34,11 +49,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <body class="d-flex justify-content-center align-items-center vh-100 bg-light">
         <form class="form shadow" action="" method="POST">
             <?php
-            if (count($success) > 0) {
-                foreach ($success as $showsuccess) {
-                    echo "<div class='alert alert-success'>$showsuccess</div>";
-                }
-            }
             if (count($errors) > 0) {
                 foreach ($errors as $showerrors) {
                     echo "<div class='alert alert-danger'>$showerrors</div>";

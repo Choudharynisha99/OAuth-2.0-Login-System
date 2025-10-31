@@ -10,18 +10,36 @@ $loginUrl = $client->createAuthUrl();
 $errors = [];
 $success = [];
 $login = new Crud();
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = $_POST['email'] ?? '';
-    $password = $_POST['password'] ?? '';
-    if ($login->login('users', $email, $password)) {
-        $_SESSION['user_email'] = $email;
-        $_SESSION['user_name'] = $_SESSION['user_name'];
-        header('Location: dashboard.php');
-        exit();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['email'] ?? '');
+    $password = trim($_POST['password'] ?? '');
+    $userData = $login->GetData('users', "email='$email'");
+    if (empty($userData)) {
+        $errors[] = "User doesn't exist!";
     } else {
-        $errors[] = "Something Went Wrong!";
+        $user = $userData[0];
+        if ($password !== $user['password']) {
+            $errors[] = "Password doesn't match!";
+        } else {
+            $_SESSION['user_email'] = $user['email'];
+            $_SESSION['user_name'] = $user['name'];
+            header('Location: dashboard.php');
+            exit();
+        }
     }
 }
+// if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+//     $email = $_POST['email'] ?? '';
+//     $password = $_POST['password'] ?? '';
+//     if ($login->login('users', $email, $password)) {
+//         $_SESSION['user_email'] = $email;
+//         $_SESSION['user_name'] = $_SESSION['user_name'];
+//         header('Location: dashboard.php');
+//         exit();
+//     } else {
+//         $errors[] = "Something Went Wrong!";
+//     }
+// }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -58,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <path d="m30.853 13.87a15 15 0 0 0 -29.729 4.082 15.1 15.1 0 0 0 12.876 12.918 15.6 15.6 0 0 0 2.016.13 14.85 14.85 0 0 0 7.715-2.145 1 1 0 1 0 -1.031-1.711 13.007 13.007 0 1 1 5.458-6.529 2.149 2.149 0 0 1 -4.158-.759v-10.856a1 1 0 0 0 -2 0v1.726a8 8 0 1 0 .2 10.325 4.135 4.135 0 0 0 7.83.274 15.2 15.2 0 0 0 .823-7.455zm-14.853 8.13a6 6 0 1 1 6-6 6.006 6.006 0 0 1 -6 6z"></path>
                         </g>
                     </svg>
-                    <input id="email" class="form-control input" type="text" placeholder="Enter your Email" name="email">
+                    <input id="email" class="form-control input" type="text" placeholder="Enter your Email" name="email" value="<?php echo isset($_POST['email']) ? $_POST['email'] : ''; ?>">
                 </div>
             </div>
 
